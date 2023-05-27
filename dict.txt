@@ -14,3 +14,7 @@ ter
 yama
 yoga
 zona
+gaja
+haja
+halaj
+halabs

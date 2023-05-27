@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <locale.h>
-#include <ctype.h>
 
 #define N 10
 #define MAX 20
@@ -10,22 +8,23 @@
 typedef struct NODE {
 	int isEnd;
 	char* data;
-	struct NODE* childs[N];
+	int val;
+	struct NODE* child;
+	struct NODE* sib;
 } NODE;
 
 
-NODE* newNode();
+NODE* newNode(int val);
 int getIntValue(char x);
 void Insert(NODE* root,char str[MAX]);
 void checkDict(NODE* root);
 void search(NODE* root,char str[MAX]);
-
+NODE* searchNODE(NODE* root,int x);
 
 int main() {
 	FILE* fptr;
 	char str[MAX];
-	NODE* root = newNode();
-	setlocale(LC_ALL, "turkish");
+	NODE* root = newNode(0);
 	int i;
 	
 	
@@ -35,7 +34,9 @@ int main() {
 		return 1;	
 	}
 	while (fgets(str, 20, fptr)){
+		sscanf(str,"%s\n",str);
 		Insert(root,str);
+		printf("\n");
 	}
 	checkDict(root);
 	fclose(fptr);
@@ -53,6 +54,13 @@ void checkDict(NODE* root) {
 		scanf("%s",str);
 	}
 }
+NODE* searchNODE2(NODE* root,int x){
+	while (root  != NULL && root->val < x)
+		root = root->sib;
+	if (root != NULL && root->val != x)
+		return NULL;
+	return root;
+}
 void search(NODE* root,char str[MAX]) {
 	int i = 0,tmp;
 	while (str[i] != '\0' && root != NULL) {
@@ -61,35 +69,34 @@ void search(NODE* root,char str[MAX]) {
 			printf(" \n!*! Invalid input !");
 			return;
 		}
-		root = root->childs[tmp];
+		root = searchNODE2(root->child,tmp);
 		i++;
 	}
 	if (root == NULL || !root->isEnd) {
 		printf(" \n!*! This word is not in the dict");
 		return;
 	}
-	while (root != NULL && root->isEnd ) {
+	do {
 		printf(" !->  %s\n",root->data);
-		root = root->childs[0];
-	}
+		root = root->child;
+	}while (root != NULL && root->val == 0);
 }
-NODE* newNode() {
+NODE* newNode(int val) {
 	NODE* tmp = (NODE*) malloc(sizeof(NODE));
 	int i;
 	tmp->isEnd = 0;
-
-	for (i = 0; i < N; i++)
-		tmp->childs[i] = NULL;
-
+	tmp->child = NULL;
+	tmp->sib = NULL;
+	tmp->val = val;
 	return tmp;
 }
 
 int getIntValue(char x) {
-	const char* dict[10] = {"#", "çğüş", "abc", "def", "ghı", "jkl", "mno", "pqrs", "tuv", "wxyz"};
+	const char* dict[10] = {"#", "1234", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
 	int i = 0,j;
 	while (i < 10) {
 		j = 0;
-		while (dict[i][j] != '\0' ) {
+		while (dict[i][j] != '\0') {
 			if (dict[i][j] == x)
 				return i;
 			j++;
@@ -103,21 +110,47 @@ int getIntValue(char x) {
 
 void Insert(NODE* root,char str[MAX]) {
 	int i = 0,iVal;
-	printf("\nAdded %s as :",str);
-	while (str[i] != '\0' && str[i] != 10){
+	NODE* tmp;
+	printf("Added %s as : ",str);
+	while (str[i] != '\0'){
 		iVal = getIntValue(str[i]);
 		printf("%d",iVal);
-		if (!root->childs[iVal])
-			root->childs[iVal] = newNode();
-
-		root = root->childs[iVal];
+		if (iVal == -1)
+			return;
+		
+		if (root->child == NULL){
+			root->child = newNode(iVal);
+			root = root->child;
+		}
+		else {
+			root = root->child;
+			if (root->val != iVal){
+				root = searchNODE(root,iVal);
+				if (root->sib == NULL || root->sib->val != iVal){
+					tmp = root->sib;
+					root->sib = newNode(iVal);
+					root->sib->sib = tmp;
+				}
+				root = root->sib;
+			}
+		}
 		i++;
 	}
 	while (root->isEnd) {
-		if (!root->childs[0])
-			root->childs[0] = newNode();
-		root = root->childs[0];
+		if (root->child == NULL)
+			root->child = newNode(0);	
+		else if (root->child->val != 0){
+			root->child = newNode(0);
+			root->child->sib = tmp;
+		}
+		root = root->child;
 	}
 	root->data = strdup(str);
 	root->isEnd = 1;
+}
+NODE* searchNODE(NODE* root,int x){
+	while (root->sib  != NULL && root->sib->val < x)
+		root = root->sib;
+	
+	return root;
 }
