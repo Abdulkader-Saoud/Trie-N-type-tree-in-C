@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #define N 10
-#define MAX 20
+#define MAX 20  // word max length
 
 typedef struct LEAF
 {
@@ -11,27 +11,26 @@ typedef struct LEAF
 	struct LEAF* next;
 }LEAF;
 
+
 typedef struct NODE {
-	int val;
 	struct LEAF* leaf;
-	struct NODE* child;
-	struct NODE* sib;
+	struct NODE* childs[N];
 } NODE;
 
 
-NODE* newNode(int val);
+NODE* newNode();
+LEAF* newLeaf(char str[MAX]);
 int getIntValue(char x);
 void Insert(NODE* root,char str[MAX]);
 void checkDict(NODE* root);
 void search(NODE* root,char str[MAX]);
-NODE* searchNODE(NODE* root,int x);
+
 
 int main() {
 	FILE* fptr;
 	char str[MAX];
-	NODE* root = newNode(0);
+	NODE* root = newNode();
 	int i;
-	
 	
 	fptr = fopen("dict.txt", "r");
 	if (fptr == NULL){
@@ -52,6 +51,16 @@ LEAF* newLeaf(char str[MAX]){
 	strcpy(tmp->data,str);
 	return tmp;
 }
+NODE* newNode() {
+	NODE* tmp = (NODE*) malloc(sizeof(NODE));
+	int i;
+	tmp->leaf = NULL;
+
+	for (i = 0; i < N; i++)
+		tmp->childs[i] = NULL;
+	
+	return tmp;
+}
 void checkDict(NODE* root) {
 	char str[MAX];
 	printf("\n To leave enter q:");
@@ -63,14 +72,6 @@ void checkDict(NODE* root) {
 		scanf("%s",str);
 	}
 }
-
-NODE* searchNODE2(NODE* root,int x){
-	while (root  != NULL && root->val < x)
-		root = root->sib;
-	if (root != NULL && root->val != x)
-		return NULL;
-	return root;
-}
 void search(NODE* root,char str[MAX]) {
 	int i = 0,tmp;
 	LEAF* leaf;
@@ -80,7 +81,7 @@ void search(NODE* root,char str[MAX]) {
 			printf(" \n!*! Invalid input !");
 			return;
 		}
-		root = searchNODE2(root->child,tmp);
+		root = root->childs[tmp];
 		i++;
 	}
 	if (root == NULL || root->leaf == NULL) {
@@ -93,28 +94,14 @@ void search(NODE* root,char str[MAX]) {
 		leaf = leaf->next;
 	}
 }
-NODE* newNode(int val) {
-	NODE* tmp = (NODE*) malloc(sizeof(NODE));
-	tmp->child = NULL;
-	tmp->sib = NULL;
-	tmp->val = val;
-	tmp->leaf = NULL;
-	return tmp;
-}
 
 
-NODE* searchNODE(NODE* root,int x){
-	while (root->sib  != NULL && root->sib->val < x)
-		root = root->sib;
-	
-	return root;
-}
 int getIntValue(char x) {
 	const char* dict[N] = {"#", "1234", "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz"};
 	int i = 0,j;
 	while (i < N) {
 		j = 0;
-		while (dict[i][j] != '\0') {
+		while (dict[i][j] != '\0' ) {
 			if (dict[i][j] == x)
 				return i;
 			j++;
@@ -125,37 +112,22 @@ int getIntValue(char x) {
 	printf("\n !*! This char is not in the Dict");
 	return -1;
 }
+
 void Insert(NODE* root,char str[MAX]) {
 	int i = 0,iVal;
-	NODE* tmp;
 	LEAF* leaf;
-	printf("Added %s as : ",str);
-	while (str[i] != '\0'){
+	printf("Added %s as :",str);
+	while (str[i] != '\0' && str[i] != 10){
 		iVal = getIntValue(str[i]);
-		if (iVal == -1)
-			return;
 		printf("%d",iVal);
-		
-		if (root->child == NULL){
-			root->child = newNode(iVal);
-			root = root->child;
-		}
-		else {
-			root = root->child;
-			if (root->val != iVal){
-				root = searchNODE(root,iVal);
-				if (root->sib == NULL || root->sib->val != iVal){
-					tmp = root->sib;
-					root->sib = newNode(iVal);
-					root->sib->sib = tmp;
-				}
-				root = root->sib;
-			}
-		}
+		if (!root->childs[iVal])
+			root->childs[iVal] = newNode();
+
+		root = root->childs[iVal];
 		i++;
 	}
+
 	leaf = newLeaf(str);
 	leaf->next = root->leaf;
 	root->leaf = leaf;
 }
-

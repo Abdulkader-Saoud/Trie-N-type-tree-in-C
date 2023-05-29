@@ -18,3 +18,4 @@ gaja
 haja
 halaj
 halabs
+bz
